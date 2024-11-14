@@ -53,24 +53,37 @@ $(document).ready(function() {
         transactionChart.update();
     }
 
-    // Currency conversion (for display purposes)
-    $('#currency').change(function() {
-        const selectedCurrency = $(this).val();
-        // You could apply conversion logic here
-        alert('Currency changed to ' + selectedCurrency);
-    });
+    // Function to fetch transactions from the server and update the chart
+    function fetchTransactions() {
+        $.ajax({
+            type: 'GET',
+            url: 'get-transactions.php',  // Path to your get-transactions.php file
+            success: function(response) {
+                const transactions = JSON.parse(response);  // Parse the returned JSON
 
-    // Language translation (basic demo)
-    $('#language').change(function() {
-        const selectedLanguage = $(this).val();
-        if (selectedLanguage === 'fr') {
-            $('#modalTitle').text('Succès');
-            $('#modalMessage').text('Transaction enregistrée avec succès !');
-            $('label[for="amount"]').text('Montant de la transaction');
-        } else {
-            $('#modalTitle').text('Success');
-            $('#modalMessage').text('Transaction recorded successfully!');
-            $('label[for="amount"]').text('Transaction Amount');
-        }
-    });
+                // Clear previous data in the chart
+                transactionChart.data.labels = [];
+                transactionChart.data.datasets[0].data = [];
+
+                // Loop through the transactions and update the chart
+                transactions.forEach(function(transaction) {
+                    const timestamp = new Date(transaction.date).toLocaleTimeString();
+                    transactionChart.data.labels.push(timestamp);
+                    transactionChart.data.datasets[0].data.push(transaction.amount);
+                });
+
+                // Update the chart
+                transactionChart.update();
+            },
+            error: function() {
+                console.error('Error fetching transactions.');
+            }
+        });
+    }
+
+    // Fetch transactions when the page loads
+    fetchTransactions();
+
+    // Set interval to refresh transactions every 5 minutes (optional)
+    setInterval(fetchTransactions, 5 * 60 * 1000);  // Refresh every 5 minutes
 });
